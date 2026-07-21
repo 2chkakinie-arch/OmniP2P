@@ -6,6 +6,7 @@
  *  License : MIT
  *  Author  : 柿二重
  *  Size    : single-file core, ZERO external build dependencies (browser-native)
+ *  Document: https://html.cafe/x6f478e11
  *
  *  読み込むだけで使える完全静的 P2P 通信・保存ライブラリ。
  *  <script src="OmniP2P.js"></script> するだけで window.OmniP2P が使えます。
