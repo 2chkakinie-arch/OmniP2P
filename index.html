@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>OmniP2P v3</title>
+<meta name="description" content="OmniP2P v2 は <script> タグひとつで読み込める、Nostr シグナリング + WebRTC + Blossom/NIP-96 永続化 + E2EE + CRDT を統合した完全静的な P2P ライブラリです。" />
+<link rel="icon" href="https://res.cloudinary.com/dpqh2ssnh/image/upload/v1784626295/usobrrzydqq4qljjcrps.png" type="image/png" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css" />
+<style>
+:root{
+  --bg:#0b0b1a;
+  --bg-alt:#12122a;
+  --bg-card:#161632;
+  --border:#252547;
+  --text:#e7e7fb;
+  --text-dim:#a5a5c6;
+  --primary:#a855f7;
+  --primary-2:#7c3aed;
+  --accent:#22d3ee;
+  --success:#34d399;
+  --danger:#f87171;
+  --code-bg:#0e0e22;
+  --radius:14px;
+  --mono:'JetBrains Mono','Fira Code',Menlo,Consolas,monospace;
+  --sans:'Inter','Hiragino Kaku Gothic ProN','Noto Sans JP',system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:var(--sans);line-height:1.75;-webkit-font-smoothing:antialiased}
+a{color:var(--accent);text-decoration:none;transition:color .15s}
+a:hover{color:var(--primary)}
+code{font-family:var(--mono);font-size:.92em;background:var(--code-bg);padding:.15em .4em;border-radius:5px;border:1px solid var(--border);color:#f0abfc}
+pre{margin:0;border-radius:var(--radius);overflow:hidden;border:1px solid var(--border)}
+pre code{background:transparent;border:none;padding:0;font-size:.88em}
+body::before{
+  content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:
+    radial-gradient(1200px 700px at 15% -10%, rgba(124,58,237,.18), transparent 60%),
+    radial-gradient(900px 600px at 90% 10%, rgba(34,211,238,.10), transparent 60%),
+    radial-gradient(700px 500px at 50% 110%, rgba(168,85,247,.12), transparent 60%);
+}
+header.top{
+  position:sticky;top:0;z-index:50;
+  backdrop-filter:blur(14px);background:rgba(11,11,26,.72);
+  border-bottom:1px solid var(--border);
+}
+.top-inner{
+  max-width:1200px;margin:0 auto;padding:14px 24px;
+  display:flex;align-items:center;justify-content:space-between;gap:24px;
+}
+.brand{display:flex;align-items:center;gap:12px;font-weight:700}
+.brand img{width:36px;height:36px;border-radius:9px;box-shadow:0 0 24px rgba(168,85,247,.45)}
+.brand .name{font-size:1.15rem;letter-spacing:.02em;background:linear-gradient(90deg,#c4b5fd,#22d3ee);-webkit-background-clip:text;background-clip:text;color:transparent}
+.brand .ver{font-family:var(--mono);font-size:.7rem;color:var(--text-dim);border:1px solid var(--border);padding:2px 6px;border-radius:6px}
+nav.top-nav{display:flex;gap:22px;font-size:.92rem}
+nav.top-nav a{color:var(--text-dim)}
+nav.top-nav a:hover{color:var(--text)}
+.top-cta{display:flex;gap:10px}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:9px 16px;border-radius:10px;font-size:.9rem;font-weight:600;border:1px solid var(--border);background:var(--bg-card);color:var(--text);cursor:pointer;transition:transform .1s,border-color .2s,background .2s}
+.btn:hover{border-color:var(--primary);color:var(--text)}
+.btn-primary{background:linear-gradient(135deg,var(--primary-2),var(--primary));border-color:transparent;color:#fff;box-shadow:0 8px 24px -8px rgba(168,85,247,.6)}
+.btn-primary:hover{transform:translateY(-1px);color:#fff}
+@media (max-width:820px){nav.top-nav{display:none}}
+.wrap{max-width:1200px;margin:0 auto;padding:0 24px;position:relative;z-index:1}
+main.layout{display:grid;grid-template-columns:240px 1fr;gap:40px;padding:40px 24px 80px;max-width:1200px;margin:0 auto;position:relative;z-index:1}
+aside.side{position:sticky;top:80px;align-self:start;max-height:calc(100vh - 100px);overflow-y:auto;padding-right:6px;font-size:.9rem}
+aside.side h4{font-size:.72rem;text-transform:uppercase;letter-spacing:.14em;color:var(--text-dim);margin:14px 0 6px;font-weight:700}
+aside.side a{display:block;color:var(--text-dim);padding:5px 10px;border-radius:6px;border-left:2px solid transparent;transition:all .12s}
+aside.side a:hover{color:var(--text);background:var(--bg-card)}
+aside.side a.active{color:var(--primary);border-left-color:var(--primary);background:rgba(168,85,247,.08)}
+article.content{min-width:0}
+@media (max-width:900px){main.layout{grid-template-columns:1fr}aside.side{position:static;max-height:none}}
+.hero{padding:80px 24px 40px;text-align:center;position:relative;z-index:1}
+.hero-logo{width:120px;height:120px;border-radius:28px;box-shadow:0 20px 60px -10px rgba(168,85,247,.6),0 0 0 1px rgba(168,85,247,.3);margin-bottom:24px}
+.hero h1{font-size:clamp(2.2rem,5vw,3.6rem);margin:0 0 12px;font-weight:800;letter-spacing:-.02em;line-height:1.1}
+.hero h1 .grad{background:linear-gradient(90deg,#a78bfa,#22d3ee,#f0abfc);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero p.lead{font-size:1.15rem;color:var(--text-dim);max-width:760px;margin:0 auto 26px}
+.hero-badges{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:26px}
+.badge{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:999px;font-size:.8rem;background:var(--bg-card);border:1px solid var(--border);color:var(--text-dim);font-family:var(--mono)}
+.badge.ok{color:var(--success);border-color:rgba(52,211,153,.3)}
+.badge.hot{color:var(--primary);border-color:rgba(168,85,247,.35)}
+.hero-cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+section{scroll-margin-top:80px;margin:56px 0}
+section h2{font-size:1.9rem;margin:0 0 8px;letter-spacing:-.01em;font-weight:700}
+section h2::before{content:"";display:inline-block;width:6px;height:24px;background:linear-gradient(180deg,var(--primary),var(--accent));border-radius:3px;margin-right:12px;vertical-align:-4px}
+section h3{font-size:1.25rem;margin:32px 0 10px;font-weight:700;color:#e0d8ff}
+section h4{font-size:1.02rem;margin:22px 0 8px;color:#c4b5fd}
+section p{color:#d4d4ea}
+section ul,section ol{color:#d4d4ea;padding-left:1.4em}
+section li{margin:6px 0}
+.card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:22px;margin:14px 0}
+.card.highlight{border-color:rgba(168,85,247,.4);background:linear-gradient(180deg,rgba(168,85,247,.06),var(--bg-card))}
+.grid-features{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;margin-top:20px}
+.feature{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;transition:transform .15s,border-color .2s}
+.feature:hover{transform:translateY(-3px);border-color:rgba(168,85,247,.5)}
+.feature .ico{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,rgba(168,85,247,.15),rgba(34,211,238,.15));font-size:1.3rem;margin-bottom:10px}
+.feature h4{margin:6px 0;color:#fff;font-size:1.05rem}
+.feature p{margin:0;color:var(--text-dim);font-size:.92rem}
+.table-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:var(--radius);margin:16px 0}
+table{width:100%;border-collapse:collapse;font-size:.9rem}
+th,td{padding:12px 16px;text-align:left;border-bottom:1px solid var(--border);vertical-align:top}
+th{background:var(--bg-alt);font-weight:600;color:#e0d8ff;font-size:.82rem;text-transform:uppercase;letter-spacing:.06em}
+tr:last-child td{border-bottom:none}
+td code{color:#f0abfc}
+.callout{border-left:4px solid var(--accent);background:rgba(34,211,238,.06);padding:14px 18px;border-radius:0 10px 10px 0;margin:16px 0;color:#c4e9f4}
+.callout.warn{border-left-color:#fbbf24;background:rgba(251,191,36,.06);color:#fef3c7}
+.callout.tip{border-left-color:var(--primary);background:rgba(168,85,247,.06);color:#e9d5ff}
+.demo{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:22px;margin:14px 0}
+.demo-row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:10px 0}
+.demo input, .demo textarea{background:var(--bg-alt);border:1px solid var(--border);color:var(--text);padding:9px 12px;border-radius:8px;font-family:var(--mono);font-size:.9rem;min-width:180px}
+.demo input:focus, .demo textarea:focus{outline:none;border-color:var(--primary)}
+.demo textarea{width:100%;min-height:70px;resize:vertical}
+.demo .status{font-family:var(--mono);font-size:.82rem;color:var(--text-dim);padding:2px 8px;border-radius:6px;background:var(--bg-alt);border:1px solid var(--border)}
+.demo .status.on{color:var(--success);border-color:rgba(52,211,153,.3)}
+.demo .status.off{color:var(--danger);border-color:rgba(248,113,113,.3)}
+.log{background:#050510;border:1px solid var(--border);border-radius:8px;padding:12px;font-family:var(--mono);font-size:.82rem;max-height:220px;overflow-y:auto;color:#a5f3fc;white-space:pre-wrap;word-break:break-all}
+.log .me{color:#c4b5fd}
+.log .sys{color:#fbbf24}
+.log .err{color:#f87171}
+footer{border-top:1px solid var(--border);padding:40px 24px;text-align:center;color:var(--text-dim);font-size:.88rem;margin-top:60px;position:relative;z-index:1}
+footer a{color:var(--text-dim)}
+footer a:hover{color:var(--primary)}
+.code-block{position:relative}
+.copy-btn{position:absolute;top:8px;right:8px;background:rgba(255,255,255,.06);color:var(--text-dim);border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:.75rem;cursor:pointer;font-family:var(--mono);opacity:0;transition:opacity .15s}
+.code-block:hover .copy-btn{opacity:1}
+.copy-btn:hover{color:var(--text);border-color:var(--primary)}
+.copy-btn.copied{color:var(--success);border-color:var(--success)}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="top-inner">
+    <div class="brand">
+      <img src="https://res.cloudinary.com/dpqh2ssnh/image/upload/v1784626295/usobrrzydqq4qljjcrps.png" alt="OmniP2P logo" />
+      <span class="name">OmniP2P</span>
+      <span class="ver">v3.0.0</span>
+    </div>
+    <nav class="top-nav">
+      <a href="#features">機能</a>
+      <a href="#quickstart">クイックスタート</a>
+      <a href="#api">API</a>
+      <a href="#adapters">アダプタ</a>
+      <a href="#demo">デモ</a>
+      <a href="#license">LICENSE</a>
+    </nav>
+    <div class="top-cta">
+      <a class="btn" href="https://github.com/2chkakinie-arch/OmniP2P" target="_blank" rel="noopener">GitHub</a>
+      <a class="btn btn-primary" href="#quickstart">はじめる →</a>
+    </div>
+  </div>
+</header>
+<section class="hero">
+  <h1>OmniP2P <span class="grad">v3</span><br />すべてを内包する P2P エンジン</h1>
+  <p class="lead">
+    Nostr シグナリング + WebRTC + Blossom/NIP-96 永続化 + E2EE + CRDT を、
+    <code>&lt;script&gt;</code> ひとつで統合。ビルド不要・ゼロ依存・完全静的。
+    「読み込むだけで使える」次世代の分散通信ライブラリ。
+  </p>
+  <div class="hero-badges">
+    <span class="badge ok">✓ Zero Dependency</span>
+    <span class="badge ok">✓ Browser Native</span>
+    <span class="badge ok">✓ UMD / ESM / CommonJS</span>
+    <span class="badge hot">🔒 E2EE by default</span>
+    <span class="badge">MIT License</span>
+    <span class="badge">v3.0.0</span>
+  </div>
+  <div class="hero-cta">
+    <a class="btn btn-primary" href="#quickstart">🚀 5 分で始める</a>
+    <a class="btn" href="#demo">▶ ライブデモを試す</a>
+    <a class="btn" href="https://cdn.jsdelivr.net/gh/2chkakinie-arch/OmniP2P@main/v3.js" target="_blank">📄 ソースを見る</a>
+  </div>
+</section>
+<main class="layout">
+  <aside class="side">
+    <h4>はじめに</h4>
+    <a href="#overview">概要</a>
+    <a href="#features">主要機能</a>
+    <a href="#whats-new">v3 の変更点</a>
+
+    <h4>使い方</h4>
+    <a href="#install">インストール</a>
+    <a href="#quickstart">クイックスタート</a>
+    <a href="#advantages">利点</a>
+    <h4>API リファレンス</h4>
+    <a href="#api-constructor">new OmniP2P()</a>
+    <a href="#api-omni">omni.*</a>
+    <a href="#api-room">Room</a>
+    <a href="#api-call">Call</a>
+    <a href="#api-storage">Storage</a>
+    <a href="#api-crdt">CRDT Doc</a>
+    <h4>拡張</h4>
+    <a href="#adapters">アダプタ</a>
+    <a href="#design">設計メモ</a>
+    <h4>その他</h4>
+    <a href="#demo">ライブデモ</a>
+    <a href="#faq">FAQ</a>
+    <a href="#license">LICENSE</a>
+    <a href="#terms">利用規約</a>
+  </aside>
+  <article class="content">
+  <section id="overview">
+    <h2>OmniP2P とは</h2>
+    <p>
+      <strong>OmniP2P</strong> は、ブラウザだけで完結する P2P 通信・永続化ライブラリです。
+      Nostr リレーをシグナリング/フォールバック搬送に、WebRTC を主搬送に、
+      Blossom / NIP-96 / IPFS ゲートウェイをコンテンツアドレス永続化ストレージに使い、
+      さらに E2EE (X25519 + AES-GCM) と CRDT 共同編集 (MiniCRDT, Yjs 互換) までを
+      <strong>単一 JS ファイル</strong>に詰め込んでいます。
+    </p>
+    <p>
+      サーバー不要・ビルド不要・依存パッケージ不要。
+      <code>&lt;script src="v3.js"&gt;</code> を書くだけで、
+      チャット・音声/動画通話・画面共有・録画保存・共同編集・KV データベースを備えたアプリを作れます。
+    </p>
+    <div class="callout tip">
+      <strong>💡 コンセプト:</strong> 「Nostr の永続と可達性」+「WebRTC の低遅延」+「Blossom の分散ストレージ」を
+      ひとつの API 面に統合し、開発者は<em>プロトコルを意識せず</em>普通のイベント駆動 API として使えます。
+    </div>
+  </section>
+  <section id="features">
+    <h2>主要機能</h2>
+    <div class="grid-features">
+      <div class="feature">
+        <div class="ico">🔌</div>
+        <h4>Nostr → WebRTC 自動移行</h4>
+        <p>決定的イニシエータ選出 + ICE restart で確実にネゴシエート。P2P 確立後は超低遅延。</p>
+      </div>
+      <div class="feature">
+        <div class="ico">📡</div>
+        <h4>自動フォールバック</h4>
+        <p>WebRTC が張れない相手には、Nostr ブロードキャストへ自動で切替え。必ずメッセージが届きます。</p>
+      </div>
+      <div class="feature">
+        <div class="ico">💾</div>
+        <h4>Blossom / NIP-96 永続化</h4>
+        <p>コンテンツアドレスな KV + Blob DB。書き込みは 1 本高速、裏で非同期に多重冗長化。</p>
+      </div>
+      <div class="feature">
+        <div class="ico">🎥</div>
+        <h4>音声/動画通話 & 録画</h4>
+        <p><code>startCall()</code> / <code>shareScreen()</code>、<code>MediaRecorder</code> で暗号化保存 + Nostr 告知。</p>
+      </div>
+      <div class="feature">
+        <div class="ico">🔒</div>
+        <h4>E2EE 標準搭載</h4>
+        <p>X25519 ECDH → HKDF → AES-GCM 256 (AAD)。保存前にも暗号化してからアップロード可能。</p>
+      </div>
+      <div class="feature">
+        <div class="ico">🧬</div>
+        <h4>CRDT 共同編集</h4>
+        <p>MiniCRDT (Yjs 互換シェイプ)。WebRTC で即時同期、Nostr で永続化。</p>
+      </div>
+      <div class="feature">
+        <div class="ico">🧩</div>
+        <h4>プラガブル拡張</h4>
+        <p>Yjs / Automerge / Matrix / GunDB / OrbitDB / Iris / Waku を <em>必要な時だけ</em> 遅延ロード。</p>
+      </div>
+      <div class="feature">
+        <div class="ico">⚡</div>
+        <h4>ゼロ依存 / ゼロビルド</h4>
+        <p>純 JS 実装の secp256k1 (BIP-340 schnorr) + X25519。<code>&lt;script&gt;</code> だけで動く。</p>
+      </div>
+      <div class="feature">
+        <div class="ico">🛡️</div>
+        <h4>放置切断バグ対策</h4>
+        <p>EOSE 応答実確認 heartbeat + 実イベント watchdog + スタガー再接続で瞬断ゼロ。</p>
+      </div>
+    </div>
+  </section>
+  <section id="whats-new">
+    <h2>v3 での変更点 (WHAT'S NEW)</h2>
+    <p>
+      v3 ではコアを「軽量な通信・保存エンジン」に絞り、重い外部依存 (Gun / Matrix / Yjs / Waku 等) は
+      <strong>必要な時だけ CDN から遅延ロードする外部アダプタ</strong>に分離しました。
+    </p>
+
+    <h3>🎯 レビュー全指摘 (#1〜#12) への対応</h3>
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>#</th><th>修正内容</th></tr></thead>
+      <tbody>
+        <tr><td>#1</td><td>ハートビートは <strong>EOSE 応答を実確認</strong>してから「生存」とみなす (half-open 検知)</td></tr>
+        <tr><td>#2</td><td>watchdog は <strong>アプリイベント受信のみ</strong>でリセット (ハートビート応答では ×)</td></tr>
+        <tr><td>#3</td><td>リレー再接続をスタガー + 「最低 1 本維持」フェイルセーフで瞬断ゼロ化</td></tr>
+        <tr><td>#4</td><td><code>Room.send</code> のフォールバック判定を <code>pc.open</code> 実数ベースに統一</td></tr>
+        <tr><td>#5</td><td>SDP/ICE 等の重要イベントは <code>minAck</code> 複数 + ack 不足時の自動再送</td></tr>
+        <tr><td>#6</td><td>保留 ICE 候補にリングバッファ上限 (重複配送の氾濫を抑制)</td></tr>
+        <tr><td>#7</td><td>polite 側も restart タイムアウト後に re-offer 要求へフォールバック</td></tr>
+        <tr><td>#8</td><td>RelayConnection と PeerConnection の再接続を状態機械で協調 (glare 低減)</td></tr>
+        <tr><td>#9</td><td>DataChannel <code>bufferedAmount</code> バックプレッシャー流量制御</td></tr>
+        <tr><td>#10</td><td>再接続時に <code>since</code> を「最後に受信した時刻」に更新し取りこぼし防止</td></tr>
+        <tr><td>#11</td><td>RTC が connected なら presence timeout だけでは切断しない (RTC 優先)</td></tr>
+        <tr><td>#12</td><td>ハートビート専用サブ ID を再接続毎に再生成</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+  <section id="install">
+    <h2>インストール</h2>
+
+    <h3>1. CDN から (推奨)</h3>
+    <div class="code-block">
+    <pre><code class="language-html">&lt;script src="https://cdn.jsdelivr.net/gh/2chkakinie-arch/OmniP2P@main/v2.js"&gt;&lt;/script&gt;</code></pre>
+    </div>
+    <p>ブラウザでは <code>window.OmniP2P</code> が使えるようになります。</p>
+
+    <h3>2. Node / CommonJS</h3>
+    <div class="code-block">
+    <pre><code class="language-js">const OmniP2P = require('./v2.js');</code></pre>
+    </div>
+
+    <h3>3. AMD</h3>
+    <p>UMD ラッパーが同梱されているため AMD ローダーからも <code>define(['OmniP2P'], fn)</code> で使えます。</p>
+
+    <h3>4. ネイティブ ESM</h3>
+    <p>ファイル末尾のコメントに従い、ラッパー経由で <code>import OmniP2P from './v2.js'</code> できます。</p>
+  </section>
+  <section id="quickstart">
+    <h2>クイックスタート</h2>
+    <p>これだけで、E2EE チャット + 音声/動画通話 + 永続保存 + 共同編集がすべて動きます。</p>
+
+    <div class="code-block">
+<pre><code class="language-html">&lt;script src="https://cdn.jsdelivr.net/gh/2chkakinie-arch/OmniP2P@main/v3.js"&gt;&lt;/script&gt;
+&lt;script&gt;
+(async () =&gt; {
+  // 1) インスタンス生成 (鍵は自動生成 or 既存の nsec/hex を渡す)
+  const omni = new OmniP2P({
+    relays: [
+      'wss://relay.damus.io',
+      'wss://nos.lol',
+      'wss://relay.nostr.band',
+      'wss://nostr.wine'
+    ],
+    // secretKey: '&lt;64-hex or nsec...&gt;'   // 省略で新規生成
+  });
+
+  await omni.start();               // リレー接続 + heartbeat 開始
+
+  // 2) ルームに参加 (合言葉ベース、E2EE 自動)
+  const room = await omni.join('my-secret-room', { password: 'p@ss' });
+
+  // 3) メッセージ (WebRTC 優先、ダメなら Nostr で必ず届く)
+  room.on('message', (msg, peer) =&gt; console.log('recv', msg, 'from', peer));
+  room.send({ hello: 'world' });
+
+  // 4) 音声/動画通話
+  const call = await room.startCall({ audio: true, video: true });
+  call.on('track', (stream, peer) =&gt; {
+    const v = document.createElement('video');
+    v.srcObject = stream; v.autoplay = true; document.body.appendChild(v);
+  });
+  // 画面共有に差し替え:
+  // await call.shareScreen();
+  // 録画して暗号化保存:
+  // const rec = call.record(); ... const url = await rec.stopAndStore();
+
+  // 5) 永続保存 (暗号化 KV / Blob DB)
+  const ref = await omni.storage.put('note:1', { text: 'hi' }); // -&gt; 参照
+  const val = await omni.storage.get('note:1');                 // -&gt; {text:'hi'}
+  const url = await omni.storage.putBlob(fileBlob);             // -&gt; 公開URL
+
+  // 6) CRDT 共同編集
+  const doc = room.doc('shared');       // MiniCRDT (Yjs 互換 API)
+  const ymap = doc.getMap('state');
+  ymap.set('count', 1);
+  doc.on('update', () =&gt; console.log(ymap.toJSON()));
+})();
+&lt;/script&gt;</code></pre>
+    </div>
+  </section>
+  <section id="advantages">
+    <h2>OmniP2P を選ぶ理由</h2>
+
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>比較軸</th><th>従来スタック</th><th>OmniP2P v2</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>導入</td>
+          <td>npm install × 数十、webpack 設定、TURN サーバー構築…</td>
+          <td><code>&lt;script&gt;</code> 1 行、ビルド不要、サーバー不要</td>
+        </tr>
+        <tr>
+          <td>シグナリング</td>
+          <td>自前のシグナリングサーバーを運用</td>
+          <td>公開 Nostr リレーを利用、サーバーゼロ</td>
+        </tr>
+        <tr>
+          <td>永続化</td>
+          <td>DB + API + 認証 + オブジェクトストレージ…</td>
+          <td>Blossom / NIP-96 で <code>storage.put/get/putBlob</code> だけ</td>
+        </tr>
+        <tr>
+          <td>E2EE</td>
+          <td>ライブラリ選定 → 鍵交換設計 → 実装 → 監査…</td>
+          <td>デフォルト有効。X25519 + AES-GCM 256 + AAD</td>
+        </tr>
+        <tr>
+          <td>放置切断</td>
+          <td>WebSocket の half-open で気づかず沈黙</td>
+          <td>EOSE 実確認 heartbeat + watchdog + スタガー再接続</td>
+        </tr>
+        <tr>
+          <td>共同編集</td>
+          <td>Yjs + y-webrtc + y-indexeddb + プロバイダ…</td>
+          <td><code>room.doc()</code> だけで CRDT。Yjs へも差し替え可能</td>
+        </tr>
+        <tr>
+          <td>依存管理</td>
+          <td>数百 MB の node_modules と脆弱性対応</td>
+          <td>単一ファイル、外部依存ゼロ</td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+
+    <div class="grid-features" style="margin-top:24px">
+      <div class="feature">
+        <div class="ico">⚡</div>
+        <h4>Time-to-First-Message: 秒</h4>
+        <p>ページを開いた瞬間から、他ピアと暗号化メッセージを送受信できます。</p>
+      </div>
+      <div class="feature">
+        <div class="ico">🌐</div>
+        <h4>NAT 越えの徹底</h4>
+        <p>WebRTC 失敗時は Nostr リレー経由の暗号化搬送に自動フォールバック。</p>
+      </div>
+      <div class="feature">
+        <div class="ico">🔧</div>
+        <h4>拡張は自由</h4>
+        <p>コアはミニマル、必要な機能だけ <code>OmniP2P.loadAdapter()</code> で足す。</p>
+      </div>
+    </div>
+  </section>
+  <section id="api">
+    <h2>API リファレンス</h2>
+
+    <h3 id="api-constructor">new OmniP2P(opts)</h3>
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>オプション</th><th>型</th><th>説明</th></tr></thead>
+      <tbody>
+        <tr><td><code>opts.relays</code></td><td><code>string[]</code></td><td>Nostr リレー URL 群</td></tr>
+        <tr><td><code>opts.secretKey</code></td><td><code>string?</code></td><td>秘密鍵 (hex / nsec)。省略で自動生成</td></tr>
+        <tr><td><code>opts.iceServers</code></td><td><code>RTCIceServer[]?</code></td><td>STUN / TURN</td></tr>
+        <tr><td><code>opts.storage</code></td><td><code>object?</code></td><td><code>{ blossom?:string[], nip96?:string[], ipfs?:string[] }</code></td></tr>
+        <tr><td><code>opts.heartbeatMs</code></td><td><code>number?</code></td><td>default <code>20000</code></td></tr>
+        <tr><td><code>opts.watchdogMs</code></td><td><code>number?</code></td><td>default <code>55000</code></td></tr>
+        <tr><td><code>opts.debug</code></td><td><code>boolean?</code></td><td>詳細ログ出力</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h3 id="api-omni">omni.*</h3>
+<div class="code-block">
+<pre><code class="language-js">omni.start()          // リレー接続 + heartbeat 開始
+omni.stop()           // 全接続を優雅にクローズ
+omni.join(roomId, { password?, e2ee? })  // -&gt; Room
+
+omni.pubkey           // string (hex) 自分の公開鍵
+omni.storage          // Storage (put/get/del/putBlob/getBlob/list)
+
+omni.on(evt, cb)      // 'ready' | 'relay:open' | 'relay:close' | 'error'
+omni.off(evt, cb)
+omni.emit(evt, ...args)</code></pre>
+</div>
+
+    <h3 id="api-room">Room</h3>
+<div class="code-block">
+<pre><code class="language-js">room.send(data, { reliable?, to? })   // to 省略で全員へ
+room.on('message' | 'peer:join' | 'peer:leave' | 'state', cb)
+room.peers()                          // -&gt; string[] (pubkey hex)
+room.startCall(constraints)           // -&gt; Call
+room.doc(name)                        // -&gt; CRDT Doc
+room.leave()</code></pre>
+</div>
+
+    <h3 id="api-call">Call</h3>
+<div class="code-block">
+<pre><code class="language-js">call.localStream                      // 自分の MediaStream
+call.on('track', (stream, peer) =&gt; {}) // 相手のトラック受信
+call.shareScreen()                    // 画面共有へ差し替え
+call.stopScreen()
+call.replaceTrack(kind, track)        // 'audio' | 'video'
+call.mute(kind, bool)
+call.record()                         // -&gt; Recorder
+//   recorder.stopAndStore()          // -&gt; url (暗号化アップロード済み URL)
+call.hangup()</code></pre>
+</div>
+
+    <h3 id="api-storage">Storage</h3>
+<div class="code-block">
+<pre><code class="language-js">storage.put(key, jsonable, { encrypt? })  // -&gt; ref
+storage.get(key)                          // -&gt; value
+storage.del(key)
+storage.putBlob(blob|file, { encrypt?, name? })   // -&gt; url
+storage.getBlob(url, { key? })            // -&gt; Blob
+storage.list(prefix?)                     // -&gt; [{key, ref, ts}]</code></pre>
+</div>
+    <div class="callout">
+      <strong>ℹ️ ストレージの信頼性:</strong> 書き込みは<strong>まず 1 本速い先へ</strong>投げ、
+      裏で <em>Blossom → NIP-96 → IPFS ゲートウェイ</em>の順に非同期冗長化されます。
+      読み出しはコンテンツアドレスなので、どのプロバイダからでも同じ結果が得られます。
+    </div>
+
+    <h3 id="api-crdt">CRDT Doc (MiniCRDT / Yjs 互換)</h3>
+<div class="code-block">
+<pre><code class="language-js">const doc = room.doc('shared');
+const map = doc.getMap('state');
+const arr = doc.getArray('list');
+const txt = doc.getText('body');
+
+map.set('count', 1);
+arr.push(['hello']);
+txt.insert(0, 'こんにちは');
+
+doc.on('update', (update, origin) =&gt; { /* 増分パッチ */ });
+doc.transact(() =&gt; { /* まとめて 1 update に */ });</code></pre>
+</div>
+    <p>本物の Yjs を使いたい場合は、先に <code>yjs</code> を読み込んで <code>OmniP2P.use(OmniP2P.adapters.Yjs)</code> するだけで差し替わります。</p>
+  </section>
+  <section id="adapters">
+    <h2>プラガブルアダプタ (差し替え / 増強)</h2>
+    <p>
+      コアはミニマルに保ちつつ、必要な機能だけをアダプタとして CDN から遅延ロードできます。
+      すべてのアダプタは、対応する SDK が読み込まれていればそれを使い、なければ内蔵実装にフォールバックします。
+      <strong>依存を強制しません。</strong>
+    </p>
+
+<div class="code-block">
+<pre><code class="language-js">// 1) 明示的な遅延ロード (推奨)
+await OmniP2P.loadAdapter('gundb');   // GunDB.js  リアルタイムグラフ同期
+await OmniP2P.loadAdapter('matrix');  // Matrix.js Megolm E2EE 永続ルーム
+await OmniP2P.loadAdapter('yjs');     // Yjs.js    本物の Y.Doc プロバイダ
+await OmniP2P.loadAdapter('waku');    // Waku.js   並列匿名搬送 + Store 永続
+
+// 2) 既にロード済み SDK と差し替える場合
+OmniP2P.use(OmniP2P.adapters.Yjs);
+OmniP2P.use(OmniP2P.adapters.Waku,   { pubsubTopic: '/omnip2p/1/msg/proto' });
+OmniP2P.use(OmniP2P.adapters.Matrix, { homeserver: 'https://matrix.org' });</code></pre>
+</div>
+
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>アダプタ名</th><th>役割</th><th>ロード元</th></tr></thead>
+      <tbody>
+        <tr><td><code>MiniCRDT</code></td><td>コア同梱の軽量 CRDT (Yjs 互換シェイプ)</td><td>内蔵</td></tr>
+        <tr><td><code>Iris</code></td><td>ソーシャルグラフ (フォロー/DM 等)</td><td>内蔵</td></tr>
+        <tr><td><code>Yjs</code></td><td>本物の Y.Doc プロバイダ</td><td>外部遅延</td></tr>
+        <tr><td><code>Automerge</code></td><td>Automerge 用プロバイダ</td><td>外部遅延</td></tr>
+        <tr><td><code>Matrix</code></td><td>Matrix Megolm E2EE 永続ルーム</td><td>外部遅延</td></tr>
+        <tr><td><code>GunDB</code></td><td>リアルタイムグラフ同期 DB</td><td>外部遅延</td></tr>
+        <tr><td><code>OrbitDB</code></td><td>IPFS 上の P2P DB</td><td>外部遅延</td></tr>
+        <tr><td><code>Waku</code></td><td>並列匿名搬送 + Store 永続</td><td>外部遅延</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <p>外部アダプタはすべて <code>https://cdn.jsdelivr.net/gh/2chkakinie-arch/OmniP2P@main/&lt;Name&gt;.js</code> から自動取得されます。</p>
+  </section>
+  <section id="design">
+    <h2>設計</h2>
+    <ul>
+      <li>Nostr の署名/検証は WebCrypto では secp256k1 が無いため、<strong>純 JS secp256k1 (schnorr, BIP-340)</strong> を内蔵実装。SHA-256 は WebCrypto。</li>
+      <li>E2EE の X25519 は<strong>純 JS 実装 (RFC 7748)</strong> を内蔵。HKDF / AES-GCM は WebCrypto。</li>
+      <li>すべて tree-shake 不要の<strong>単一クロージャ</strong>。グローバル汚染は <code>OmniP2P</code> のみ。</li>
+      <li>大規模対応: リレーは<strong>多重接続 + レース</strong>、WebRTC は<strong>mesh + relay-mesh ハイブリッド</strong>、保存は<strong>コンテンツアドレス指定 + マルチプロバイダ冗長化</strong>。</li>
+    </ul>
+  </section>
+  <section id="demo">
+    <h2>ライブデモ</h2>
+    <p>
+      実際にライブラリを CDN から読み込み、あなたのブラウザ上で OmniP2P を起動します。
+      別タブで同じ URL を開けば、同じ部屋に自動で参加してメッセージを送受信できます。
+    </p>
+
+    <div class="demo">
+      <div class="demo-row">
+        <span>状態:</span>
+        <span id="demo-status" class="status off">未起動</span>
+        <span>公開鍵:</span>
+        <span id="demo-pubkey" class="status">—</span>
+      </div>
+      <div class="demo-row">
+        <input id="demo-room" placeholder="ルーム ID" value="omnip2p-docs-demo" />
+        <input id="demo-pass" placeholder="合言葉 (E2EE)" value="hello-omni-p2p" />
+        <button class="btn btn-primary" id="demo-join">🚀 起動 & 参加</button>
+        <button class="btn" id="demo-leave" disabled>退出</button>
+      </div>
+      <div class="demo-row">
+        <textarea id="demo-msg" placeholder='送信するメッセージ (例: {"hello":"world"} や普通のテキスト)'>hello from browser!</textarea>
+      </div>
+      <div class="demo-row">
+        <button class="btn" id="demo-send" disabled>送信</button>
+        <span id="demo-peers" class="status">peers: 0</span>
+      </div>
+      <div class="log" id="demo-log">// ここにイベントログが表示されます</div>
+    </div>
+
+    <div class="callout warn">
+      <strong>⚠️ 注意:</strong> このデモは公開 Nostr リレーを使用します。合言葉で E2EE されますが、
+      機微な情報の送信は避けてください。ページを閉じると自動でセッションはクリアされます。
+    </div>
+  </section>
+
+  <section id="faq">
+    <h2>FAQ</h2>
+
+    <h4>Q. サーバーは何も要らないのですか？</h4>
+    <p>A. はい。シグナリングは公開 Nostr リレーで、永続化は Blossom / NIP-96 / IPFS ゲートウェイで行います。自前サーバーは不要です。TURN が必要な超厳しい NAT 環境のみ、任意で <code>iceServers</code> に指定してください。</p>
+
+    <h4>Q. ブラウザ以外でも動きますか？</h4>
+    <p>A. UMD 対応なので Node / Deno / Bun でも <code>require</code> / <code>import</code> で動きます (WebCrypto / WebRTC 相当の polyfill が必要な場合があります)。</p>
+
+    <h4>Q. E2EE の鍵管理はどうなっていますか？</h4>
+    <p>A. ルームの合言葉から HKDF でルーム鍵を導出し、ピア間は X25519 ECDH で共有鍵を作ります。すべての通信 (WebRTC / Nostr) と保存 (Blossom) の暗号化には AES-GCM 256 に AAD を付けて使用します。</p>
+
+    <h4>Q. Nostr リレーが全部落ちたらどうなりますか？</h4>
+    <p>A. 一度 WebRTC が確立していれば、そのまま P2P 通信は継続します。加えて「最低 1 本維持」フェイルセーフとスタガー再接続により、瞬断は極小化されます。</p>
+
+    <h4>Q. コアだけ使いたいのですが、Yjs / Matrix / Gun は読み込まれますか？</h4>
+    <p>A. いいえ。それらは <code>OmniP2P.loadAdapter()</code> を呼んだ時にはじめて CDN から取得される<strong>遅延ロード</strong>です。コアの初期バイトサイズには含まれません。</p>
+  </section>
+
+  <section id="license">
+    <h2>LICENSE</h2>
+    <div class="card">
+      <p><strong>MIT License</strong></p>
+      <p>Copyright (c) 2026 柿二重</p>
+      <p>
+        Permission is hereby granted, free of charge, to any person obtaining a copy
+        of this software and associated documentation files (the "Software"), to deal
+        in the Software without restriction, including without limitation the rights
+        to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+        copies of the Software, and to permit persons to whom the Software is
+        furnished to do so, subject to the following conditions:
+      </p>
+      <p>
+        The above copyright notice and this permission notice shall be included in all
+        copies or substantial portions of the Software.
+      </p>
+      <p style="color:var(--text-dim);font-size:.88rem">
+        THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+        IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+        FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+        AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+        LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+        OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+        SOFTWARE.
+      </p>
+    </div>
+  </section>
+
+  <section id="terms">
+    <h2>利用規約</h2>
+    <div class="card">
+      <h4>1. 目的</h4>
+      <p>本規約は、OmniP2P (以下「本ソフトウェア」) の利用に関する条件を定めるものです。</p>
+
+      <h4>2. 分散ネットワークの性質</h4>
+      <p>本ソフトウェアは公開 Nostr リレー、Blossom / NIP-96 サーバー、IPFS ゲートウェイなどの分散ネットワークを利用します。これらのネットワークの可用性、コンテンツ保持期間、検閲耐性については保証されません。</p>
+
+      <h4>3. 暗号化と鍵管理</h4>
+      <p>E2EE 機能は提供されますが、<strong>秘密鍵 / パスワードの管理は利用者の責任</strong>です。喪失した場合、暗号化されたデータは復号できません。</p>
+
+      <h4>4. 禁止事項</h4>
+      <ul>
+        <li>法令または公序良俗に違反する行為</li>
+        <li>第三者の権利 (著作権 / プライバシー等) を侵害する行為</li>
+        <li>マルウェア配布、フィッシング、スパム等のネットワーク濫用</li>
+        <li>本ソフトウェアの脆弱性を悪用する行為</li>
+      </ul>
+
+      <h4>5. 免責</h4>
+      <p>本ソフトウェアは MIT ライセンスに従い「現状有姿」で提供されます。開発者およびコントリビュータは、本ソフトウェアの利用または利用不能から生じるいかなる損害についても責任を負いません。</p>
+
+      <h4>6. 準拠法</h4>
+      <p>本規約は日本法に準拠し、これに関する紛争は東京地方裁判所を第一審の専属的合意管轄とします。</p>
+
+      <p style="color:var(--text-dim);font-size:.85rem;margin-top:20px">最終更新: 2026-07-21</p>
+    </div>
+  </section>
+
+  </article>
+</main>
+<footer>
+  <div style="max-width:1200px;margin:0 auto">
+    <p>
+      <img src="https://res.cloudinary.com/dpqh2ssnh/image/upload/v1784626295/usobrrzydqq4qljjcrps.png" style="width:24px;height:24px;vertical-align:-6px;border-radius:6px" />
+      &nbsp;<strong style="color:var(--text)">OmniP2P v2.0.0</strong> — The Everything P2P Communication & Persistence Engine
+    </p>
+    <p>
+      <a href="https://github.com/2chkakinie-arch/OmniP2P" target="_blank">GitHub</a> ·
+      <a href="https://cdn.jsdelivr.net/gh/2chkakinie-arch/OmniP2P@main/v3.js" target="_blank">CDN (v2.js)</a> ·
+      <a href="#license">MIT License</a> ·
+      <a href="#terms">利用規約</a>
+    </p>
+    <p style="color:#6b6b8a;font-size:.8rem">© 2026 柿二重. Built with ♥ for mino_hobby.</p>
+  </div>
+</footer>
+
+<!-- Prism.js -->
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-core.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-markup.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-clike.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-javascript.min.js"></script>
+
+<script>
+/* -------- Sidebar active section highlight -------- */
+const sideLinks = document.querySelectorAll('aside.side a');
+const sections  = [...document.querySelectorAll('section[id]')];
+const io = new IntersectionObserver((entries)=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      const id = e.target.id;
+      sideLinks.forEach(a=>a.classList.toggle('active', a.getAttribute('href')==='#'+id));
+    }
+  });
+},{rootMargin:'-40% 0px -55% 0px'});
+sections.forEach(s=>io.observe(s));
+document.querySelectorAll('.code-block').forEach(block=>{
+  const btn = document.createElement('button');
+  btn.className = 'copy-btn';
+  btn.textContent = 'Copy';
+  btn.onclick = async ()=>{
+    const code = block.querySelector('code').innerText;
+    try{
+      await navigator.clipboard.writeText(code);
+      btn.textContent = 'Copied ✓'; btn.classList.add('copied');
+      setTimeout(()=>{ btn.textContent='Copy'; btn.classList.remove('copied'); },1400);
+    }catch(_){ btn.textContent='Failed'; }
+  };
+  block.appendChild(btn);
+});
+
+(() => {
+  const $ = id => document.getElementById(id);
+  const statusEl = $('demo-status'), pubkeyEl = $('demo-pubkey'),
+        joinBtn = $('demo-join'), leaveBtn = $('demo-leave'),
+        sendBtn = $('demo-send'), peersEl = $('demo-peers'),
+        logEl = $('demo-log');
+
+  let omni = null, room = null, loading = false;
+
+  function log(msg, cls){
+    const line = document.createElement('div');
+    if(cls) line.className = cls;
+    const t = new Date().toLocaleTimeString();
+    line.textContent = `[${t}] ${msg}`;
+    logEl.appendChild(line);
+    logEl.scrollTop = logEl.scrollHeight;
+  }
+
+  function loadOmniP2P(){
+    return new Promise((resolve, reject) => {
+      if(window.OmniP2P) return resolve(window.OmniP2P);
+      const s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/gh/2chkakinie-arch/OmniP2P@main/v3.js';
+      s.onload  = () => resolve(window.OmniP2P);
+      s.onerror = () => reject(new Error('failed to load v2.js'));
+      document.head.appendChild(s);
+    });
+  }
+
+  async function join(){
+    if(loading) return;
+    loading = true;
+    joinBtn.disabled = true;
+    statusEl.textContent = 'loading...'; statusEl.className = 'status';
+    try{
+      log('OmniP2P v3 を CDN から読み込んでいます...', 'sys');
+      const OmniP2P = await loadOmniP2P();
+      if(!OmniP2P) throw new Error('OmniP2P が見つかりません');
+
+      log('インスタンスを生成中...', 'sys');
+      omni = new OmniP2P({
+        relays:[
+          'wss://relay.damus.io',
+          'wss://nos.lol',
+          'wss://relay.nostr.band',
+          'wss://nostr.wine'
+        ],
+        debug:false
+      });
+
+      if(typeof omni.start === 'function') await omni.start();
+      pubkeyEl.textContent = (omni.pubkey || '').slice(0,16) + '…';
+      statusEl.textContent = 'リレー接続中'; statusEl.className = 'status on';
+      log('✓ omni.start() 完了', 'sys');
+
+      const roomId = $('demo-room').value.trim() || 'omnip2p-docs-demo';
+      const pass   = $('demo-pass').value;
+      log(`join('${roomId}') ...`, 'sys');
+      room = await omni.join(roomId, { password: pass });
+      statusEl.textContent = `参加中: ${roomId}`; statusEl.className = 'status on';
+      log(`✓ 参加しました`, 'sys');
+
+      room.on('message', (msg, peer) => {
+        const p = (peer||'').slice(0,10);
+        const text = typeof msg === 'string' ? msg : JSON.stringify(msg);
+        log(`← ${p}…: ${text}`);
+      });
+      room.on('peer:join', p => { log(`+ peer joined: ${(p||'').slice(0,10)}…`, 'sys'); refreshPeers(); });
+      room.on('peer:leave', p => { log(`- peer left: ${(p||'').slice(0,10)}…`, 'sys'); refreshPeers(); });
+      refreshPeers();
+
+      leaveBtn.disabled = false;
+      sendBtn.disabled  = false;
+    }catch(err){
+      log('ERROR: ' + (err && err.message || err), 'err');
+      statusEl.textContent = '起動失敗'; statusEl.className = 'status off';
+      joinBtn.disabled = false;
+    }finally{
+      loading = false;
+    }
+  }
+
+  function refreshPeers(){
+    try{
+      const list = (room && room.peers) ? room.peers() : [];
+      peersEl.textContent = 'peers: ' + (list.length || 0);
+    }catch(_){}
+  }
+
+  async function leave(){
+    try{
+      if(room && room.leave) await room.leave();
+      if(omni && omni.stop) await omni.stop();
+      log('退出しました', 'sys');
+    }catch(err){ log('leave error: '+err.message, 'err'); }
+    room = null; omni = null;
+    statusEl.textContent = '未起動'; statusEl.className = 'status off';
+    pubkeyEl.textContent = '—';
+    peersEl.textContent  = 'peers: 0';
+    joinBtn.disabled = false;
+    leaveBtn.disabled = true;
+    sendBtn.disabled  = true;
+  }
+
+  async function send(){
+    const raw = $('demo-msg').value;
+    let payload = raw;
+    try{ payload = JSON.parse(raw); }catch(_){ /* plain text */ }
+    try{
+      await room.send(payload);
+      log('→ 送信: ' + (typeof payload==='string'?payload:JSON.stringify(payload)), 'me');
+    }catch(err){ log('send error: '+err.message, 'err'); }
+  }
+
+  joinBtn.addEventListener('click', join);
+  leaveBtn.addEventListener('click', leave);
+  sendBtn.addEventListener('click', send);
+})();
+</script>
+</body>
+</html>
