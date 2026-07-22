@@ -300,20 +300,20 @@ footer a:hover{color:var(--primary)}
 
     <h3>1. CDN から (推奨)</h3>
     <div class="code-block">
-    <pre><code class="language-html">&lt;script src="https://cdn.jsdelivr.net/gh/2chkakinie-arch/OmniP2P@main/v2.js"&gt;&lt;/script&gt;</code></pre>
+    <pre><code class="language-html">&lt;script src="https://cdn.jsdelivr.net/gh/2chkakinie-arch/OmniP2P@main/v3.js"&gt;&lt;/script&gt;</code></pre>
     </div>
     <p>ブラウザでは <code>window.OmniP2P</code> が使えるようになります。</p>
 
     <h3>2. Node / CommonJS</h3>
     <div class="code-block">
-    <pre><code class="language-js">const OmniP2P = require('./v2.js');</code></pre>
+    <pre><code class="language-js">const OmniP2P = require('./v3.js');</code></pre>
     </div>
 
     <h3>3. AMD</h3>
     <p>UMD ラッパーが同梱されているため AMD ローダーからも <code>define(['OmniP2P'], fn)</code> で使えます。</p>
 
     <h3>4. ネイティブ ESM</h3>
-    <p>ファイル末尾のコメントに従い、ラッパー経由で <code>import OmniP2P from './v2.js'</code> できます。</p>
+    <p>ファイル末尾のコメントに従い、ラッパー経由で <code>import OmniP2P from './v3.js'</code> できます。</p>
   </section>
   <section id="quickstart">
     <h2>クイックスタート</h2>
@@ -373,7 +373,7 @@ footer a:hover{color:var(--primary)}
 
     <div class="table-wrap">
     <table>
-      <thead><tr><th>比較軸</th><th>従来スタック</th><th>OmniP2P v2</th></tr></thead>
+      <thead><tr><th>比較軸</th><th>従来スタック</th><th>OmniP2P v3</th></tr></thead>
       <tbody>
         <tr>
           <td>導入</td>
